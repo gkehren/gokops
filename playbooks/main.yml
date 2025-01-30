@@ -1,0 +1,10 @@
+---
+- name: Configure Homelab Server
+  hosts: homelab
+  become: true
+  roles:
+    - { role: common, tags: ['common'] }
+    - { role: security, tags: ['security'] }
+    - { role: docker, tags: ['docker'] }
+    - { role: monitoring, tags: ['monitoring'] }
+    - { role: traefik, tags: ['traefik'] }

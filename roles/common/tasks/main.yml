@@ -1,0 +1,23 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  tags: ['common', 'system']
+
+- name: Upgrade all packages
+  apt:
+    upgrade: dist
+    autoremove: yes
+  tags: ['common', 'system']
+
+- name: Install required system packages
+  apt:
+    name: "{{ system_packages }}"
+    state: present
+  tags: ['common', 'system']
+
+- name: Set timezone
+  timezone:
+    name: "{{ timezone }}"
+  tags: ['common', 'system']

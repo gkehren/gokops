@@ -1,0 +1,5 @@
+[homelab]
+homeserver ansible_host=192.168.179.137
+
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3

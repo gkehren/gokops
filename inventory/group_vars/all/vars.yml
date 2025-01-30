@@ -1,0 +1,33 @@
+---
+# System Configuration
+timezone: "UTC"
+create_user: "admin"
+# List of additional system packages to install
+system_packages:
+  - curl
+  - vim
+  - htop
+  - git
+  - python3-pip
+  - ufw
+
+# Docker Configuration
+docker_compose_version: "2.20.2"
+docker_users:
+  - "{{ create_user }}"
+
+# Monitoring Configuration
+monitoring_subnet: "172.20.0.0/24"
+prometheus_retention_time: "15d"
+node_exporter_version: "1.6.1"
+
+# Network Configuration
+docker_networks:
+  - name: traefik_network
+    driver: bridge
+    ipam_config:
+      - subnet: "172.18.0.0/24"
+  - name: monitoring_network
+    driver: bridge
+    ipam_config:
+      - subnet: "{{ monitoring_subnet }}"

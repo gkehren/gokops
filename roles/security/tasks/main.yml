@@ -1,0 +1,34 @@
+---
+- name: Configure UFW defaults
+  ufw:
+    direction: "{{ item.direction }}"
+    policy: "{{ item.policy }}"
+  loop:
+    - { direction: incoming, policy: deny }
+    - { direction: outgoing, policy: allow }
+  tags: ['security', 'firewall']
+
+- name: Allow SSH
+  ufw:
+    rule: allow
+    port: ssh
+    proto: tcp
+  tags: ['security', 'firewall']
+
+- name: Enable UFW
+  ufw:
+    state: enabled
+  tags: ['security', 'firewall']
+
+- name: Install fail2ban
+  apt:
+    name: fail2ban
+    state: present
+  tags: ['security', 'fail2ban']
+
+- name: Configure fail2ban
+  template:
+    src: jail.local.j2
+    dest: /etc/fail2ban/jail.local
+  notify: restart fail2ban
+  tags: ['security', 'fail2ban']
