@@ -1,0 +1,48 @@
+---
+- name: Create monitoring directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ monitoring_base_dir }}"
+    - "{{ monitoring_base_dir }}/prometheus"
+    - "{{ monitoring_base_dir }}/grafana"
+    - "{{ monitoring_base_dir }}/loki"
+    - "{{ monitoring_base_dir }}/promtail"
+  tags: ['monitoring', 'setup']
+
+- name: Copy Docker Compose file
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ monitoring_base_dir }}/docker-compose.yml"
+    mode: '0644'
+  tags: ['monitoring', 'setup']
+
+- name: Copy Prometheus configuration
+  template:
+    src: prometheus.yml.j2
+    dest: "{{ monitoring_base_dir }}/prometheus/prometheus.yml"
+    mode: '0644'
+  tags: ['monitoring', 'prometheus']
+
+- name: Copy Loki configuration
+  template:
+    src: loki.yml.j2
+    dest: "{{ monitoring_base_dir }}/loki/loki.yml"
+    mode: '0644'
+  tags: ['monitoring', 'loki']
+
+- name: Copy Promtail configuration
+  template:
+    src: promtail.yml.j2
+    dest: "{{ monitoring_base_dir }}/promtail/promtail.yml"
+    mode: '0644'
+  tags: ['monitoring', 'promtail']
+
+- name: Deploy monitoring stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ monitoring_base_dir }}"
+    state: present
+    build: never
+  tags: ['monitoring', 'deploy']
