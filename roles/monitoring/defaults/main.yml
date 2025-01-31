@@ -10,9 +10,11 @@ grafana_version: "11.5.0"
 loki_version: "3.3.2"
 promtail_version: "3.2.1"
 node_exporter_version: "1.8.2"
+cadvisor_version: "v0.49.2"
 
 # Ports
 prometheus_port: "9090"
 grafana_port: "3000"
 loki_port: "3100"
 node_exporter_port: "9100"
+cadvisor_port: "8080"
