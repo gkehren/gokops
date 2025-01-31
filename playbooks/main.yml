@@ -8,3 +8,4 @@
     - { role: docker, tags: ['docker'] }
     - { role: monitoring, tags: ['monitoring'] }
     - { role: traefik, tags: ['traefik'] }
+    - { role: applications/portainer, tags: ['portainer'] }

@@ -1,0 +1,24 @@
+---
+- name: Create Portainer directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ portainer_base_dir }}"
+    - "{{ portainer_base_dir }}/data"
+  tags: ['portainer', 'setup']
+
+- name: Copy Portainer Docker Compose file
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ portainer_base_dir }}/docker-compose.yml"
+    mode: '0644'
+  tags: ['portainer', 'setup']
+
+- name: Deploy Portainer stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ portainer_base_dir }}"
+    state: present
+    build: never
+  tags: ['portainer', 'deploy']

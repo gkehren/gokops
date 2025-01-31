@@ -1,0 +1,7 @@
+---
+- name: Deploy Applications
+  hosts: all
+  become: true
+  roles:
+    - role: applications/portainer
+      tags: [portainer]

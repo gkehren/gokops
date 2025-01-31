@@ -1,0 +1,23 @@
+networks:
+  portainer_network:
+    driver: bridge
+
+volumes:
+  portainer_data:
+
+services:
+  portainer:
+    image: portainer/portainer-ce:{{ portainer_version }}
+    container_name: portainer
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - portainer_data:/data
+    ports:
+      - "{{ portainer_port }}:9000"
+      - "{{ portainer_agent_port }}:9001"
+    networks:
+      - portainer_network
