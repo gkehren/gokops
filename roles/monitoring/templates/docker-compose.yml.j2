@@ -7,7 +7,7 @@ networks:
 
 services:
   prometheus:
-    image: prom/prometheus:v3.1.0
+    image: prom/prometheus:{{ prometheus_version }}
     container_name: prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -23,14 +23,14 @@ services:
     restart: unless-stopped
 
   grafana:
-    image: grafana/grafana:11.5.0
+    image: grafana/grafana:{{ grafana_version }}
     container_name: grafana
     ports:
       - "{{ grafana_port }}:3000"
     volumes:
       - grafana_data:/var/lib/grafana
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD={{ grafana_admin_password }}
+      - GF_SECURITY_ADMIN_PASSWORD={{ vault_grafana_admin_password }}
       - GF_USERS_ALLOW_SIGN_UP=false
     networks:
       - monitoring
@@ -39,7 +39,7 @@ services:
       - prometheus
 
   loki:
-    image: grafana/loki:3.3.2
+    image: grafana/loki:{{ loki_version }}
     container_name: loki
     ports:
       - "{{ loki_port }}:3100"
@@ -52,7 +52,7 @@ services:
     restart: unless-stopped
 
   promtail:
-    image: grafana/promtail:3.2.1
+    image: grafana/promtail:{{ promtail_version }}
     container_name: promtail
     volumes:
       - ./promtail:/etc/promtail
@@ -66,7 +66,7 @@ services:
       - loki
 
   node-exporter:
-    image: prom/node-exporter:v1.8.2
+    image: prom/node-exporter:{{ node_exporter_version }}
     container_name: node-exporter
     ports:
       - "{{ node_exporter_port }}:9100"
@@ -84,7 +84,7 @@ services:
     restart: unless-stopped
 
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.49.2
+    image: gcr.io/cadvisor/cadvisor:{{ cadvisor_version }}
     container_name: cadvisor
     ports:
       - "{{ cadvisor_port }}:8080"

@@ -1,0 +1,7 @@
+---
+- name: Deploy Security
+  hosts: all
+  become: true
+  roles:
+    - role: security
+      tags: [security]

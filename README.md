@@ -16,16 +16,14 @@ ansible-homelab/
 ├── playbooks/                 # Task playbooks
 │   ├── main.yml              # Main playbook
 │   ├── monitoring.yml        # Monitoring stack playbook
-│   └── security.yml          # Security hardening playbook
+│   ├── security.yml          # Security hardening playbook
+|   └── applications.yml      # Applications deployment playbook
 ├── roles/                    # Ansible roles
 │   ├── common/              # Common system configurations
 │   ├── docker/              # Docker installation and configuration
 │   ├── monitoring/          # Prometheus, Grafana, etc.
 │   ├── security/           # Security hardening
-│   └── traefik/            # Reverse proxy configuration
-├── files/                   # Static files
-│   └── docker-compose/      # Docker compose files
-├── templates/               # Jinja2 templates
+│   └── applications/       # Applications deployment
 └── README.md               # Main documentation
 ```
 
@@ -83,6 +81,10 @@ Reverse proxy setup:
 - SSL configuration
 - Basic routing setup
 
+### applications
+Applications deployment:
+- Portainer
+
 ## Configuration
 
 ### Variables
@@ -96,22 +98,14 @@ system_packages:
   - curl
   - vim
   - htop
+  - git
+  - python3-pip
+  - ufw
 
 # Docker Configuration
-docker_compose_version: "2.20.2"
+docker_compose_version: "2.32.4"
 docker_users:
-  - "{{ ansible_user }}"
-
-# Monitoring Configuration
-prometheus_retention_time: "15d"
-grafana_admin_password: "{{ vault_grafana_admin_password }}"
-
-# Network Configuration
-docker_networks:
-  - name: traefik_network
-    driver: bridge
-  - name: monitoring_network
-    driver: bridge
+  - "{{ create_user }}"
 ```
 
 ## Security

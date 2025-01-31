@@ -1,0 +1,7 @@
+---
+- name: Deploy Monitoring
+  hosts: all
+  become: true
+  roles:
+    - role: monitoring
+      tags: [monitoring]
