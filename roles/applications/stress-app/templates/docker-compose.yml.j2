@@ -1,0 +1,23 @@
+networks:
+  stress_app_network:
+    driver: bridge
+  monitoring_network:
+    external: true
+
+services:
+  stress-app:
+    build:
+      context: ./src
+      dockerfile: Dockerfile
+    container_name: {{ stress_app_name }}
+    restart: unless-stopped
+    ports:
+      - "{{ stress_app_port }}:4242"
+    networks:
+      - stress_app_network
+      - monitoring_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

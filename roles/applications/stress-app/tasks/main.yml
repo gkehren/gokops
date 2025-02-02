@@ -1,0 +1,36 @@
+---
+- name: Create Go application directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ stress_app_base_dir }}"
+    - "{{ stress_app_base_dir }}/src"
+  tags: ['stress-app', 'setup']
+
+- name: Copy Go application source files
+  copy:
+    src: "{{ item }}"
+    dest: "{{ stress_app_base_dir }}/src/"
+    mode: '0644'
+  loop:
+    - main.go
+    - go.mod
+    - go.sum
+    - Dockerfile
+  tags: ['stress-app', 'setup']
+
+- name: Copy Docker Compose file
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ stress_app_base_dir }}/docker-compose.yml"
+    mode: '0644'
+  tags: ['stress-app', 'setup']
+
+- name: Deploy Go application stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ stress_app_base_dir }}"
+    state: present
+    build: always
+  tags: ['stress-app', 'deploy']
