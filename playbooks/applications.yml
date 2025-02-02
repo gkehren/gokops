@@ -5,3 +5,5 @@
   roles:
     - role: applications/portainer
       tags: [portainer]
+    - role: applications/stress-app
+      tags: [stress-app]
