@@ -1,71 +1,91 @@
-// main.go
 package main
 
 import (
-	"fmt"
-	"log"
-	"math/rand"
+	"bytes"
 	"net/http"
+	_ "net/http/pprof"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-// Define a counter metric to track the number of requests.
+// Pre-allocate metrics with fixed labels
 var (
-	requestCounter = prometheus.NewCounterVec(
+	requestCounter = prometheus.NewCounter(
 		prometheus.CounterOpts{
-			Name: "app_requests_total",
-			Help: "Total number of requests received",
+			Name:        "app_requests_total",
+			Help:        "Total number of requests received",
+			ConstLabels: prometheus.Labels{"endpoint": "root"},
 		},
-		[]string{"endpoint"},
 	)
-	// A histogram to record response times.
-	responseTimeHistogram = prometheus.NewHistogramVec(
+
+	responseTimeHistogram = prometheus.NewHistogram(
 		prometheus.HistogramOpts{
-			Name:    "app_response_time_seconds",
-			Help:    "Response time in seconds",
-			Buckets: prometheus.DefBuckets,
+			Name:        "app_response_time_seconds",
+			Help:        "Response time in seconds",
+			Buckets:     prometheus.ExponentialBuckets(0.0001, 2, 16),
+			ConstLabels: prometheus.Labels{"endpoint": "root"},
 		},
-		[]string{"endpoint"},
 	)
 )
 
+// Buffer pool for response building
+var bufPool = sync.Pool{
+	New: func() interface{} {
+		return bytes.NewBuffer(make([]byte, 0, 128))
+	},
+}
+
+const (
+	responsePrefix = "Hello, world! Processed in "
+	responseSuffix = "\n"
+)
+
 func init() {
-	// Register Prometheus metrics.
 	prometheus.MustRegister(requestCounter)
 	prometheus.MustRegister(responseTimeHistogram)
 }
 
 func stressHandler(w http.ResponseWriter, r *http.Request) {
-	startTime := time.Now()
-	requestCounter.WithLabelValues(r.URL.Path).Inc()
+	start := time.Now()
+	requestCounter.Inc()
 
-	// Simulate load: random sleep between 10 and 100ms.
-	sleepDuration := time.Duration(rand.Intn(90)+10) * time.Millisecond
-	time.Sleep(sleepDuration)
+	// Prepare response using buffer pool
+	buf := bufPool.Get().(*bytes.Buffer)
+	defer func() {
+		buf.Reset()
+		bufPool.Put(buf)
+	}()
 
-	// Log the request (this log can be picked up by Loki).
-	log.Printf("Processed request for %s in %v", r.URL.Path, time.Since(startTime))
+	buf.WriteString(responsePrefix)
+	buf.WriteString(time.Since(start).String())
+	buf.WriteString(responseSuffix)
 
-	// Record the response time.
-	responseTimeHistogram.WithLabelValues(r.URL.Path).Observe(time.Since(startTime).Seconds())
-
-	fmt.Fprintf(w, "Hello, world! Processed in %v\n", time.Since(startTime))
+	w.Write(buf.Bytes())
+	responseTimeHistogram.Observe(time.Since(start).Seconds())
 }
 
 func main() {
-	// Seed the random generator.
-	rand.Seed(time.Now().UnixNano())
+	// Create a single router that handles both API and metrics paths.
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", stressHandler)
+	mux.Handle("/metrics", promhttp.Handler())
 
-	http.HandleFunc("/", stressHandler)
-	// Expose Prometheus metrics.
-	http.Handle("/metrics", promhttp.Handler())
+	server := &http.Server{
+		Addr:    ":4242",
+		Handler: mux,
 
-	port := "4242"
-	log.Printf("Starting server on port %s...", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		log.Fatalf("Error starting server: %v", err)
+		// Timeouts to protect against slow clients
+		ReadTimeout:       5 * time.Second,
+		ReadHeaderTimeout: 2 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       30 * time.Second,
+
+		// Optimize for high traffic
+		MaxHeaderBytes: 1 << 18, // 256KB
 	}
+
+	server.ListenAndServe()
 }
