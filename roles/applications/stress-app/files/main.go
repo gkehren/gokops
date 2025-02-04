@@ -29,6 +29,23 @@ var (
 			ConstLabels: prometheus.Labels{"endpoint": "root"},
 		},
 	)
+
+	activeRequests = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name:        "app_active_requests",
+			Help:        "Current number of active requests",
+			ConstLabels: prometheus.Labels{"endpoint": "root"},
+		},
+	)
+
+	responseSizeHistogram = prometheus.NewHistogram(
+		prometheus.HistogramOpts{
+			Name:        "app_response_size_bytes",
+			Help:        "Size of responses in bytes",
+			Buckets:     prometheus.ExponentialBuckets(128, 2, 10),
+			ConstLabels: prometheus.Labels{"endpoint": "root"},
+		},
+	)
 )
 
 // Buffer pool for response building
@@ -46,13 +63,16 @@ const (
 func init() {
 	prometheus.MustRegister(requestCounter)
 	prometheus.MustRegister(responseTimeHistogram)
+	prometheus.MustRegister(activeRequests)
+	prometheus.MustRegister(responseSizeHistogram)
 }
 
 func stressHandler(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	requestCounter.Inc()
+	activeRequests.Inc()
+	defer activeRequests.Dec()
 
-	// Prepare response using buffer pool
 	buf := bufPool.Get().(*bytes.Buffer)
 	defer func() {
 		buf.Reset()
@@ -63,8 +83,10 @@ func stressHandler(w http.ResponseWriter, r *http.Request) {
 	buf.WriteString(time.Since(start).String())
 	buf.WriteString(responseSuffix)
 
-	w.Write(buf.Bytes())
+	respBytes := buf.Bytes()
+	w.Write(respBytes)
 	responseTimeHistogram.Observe(time.Since(start).Seconds())
+	responseSizeHistogram.Observe(float64(len(respBytes)))
 }
 
 func main() {
